@@ -1,0 +1,72 @@
+[
+  {
+    "title": "The Last Sunset",
+    "author": "Maria",
+    "story": "The sun dipped below the hills one final time. Nobody knew it then, but the sky would never glow quite the same way again.",
+    "length": "short",
+    "genre": "drama"
+  },
+  {
+    "title": "Why the Cat Sat",
+    "author": "Priya",
+    "story": "The cat sat on the mat. Not because it was comfortable, but because the mat owed the cat a favor from 1987.",
+    "length": "short",
+    "genre": "funny"
+  },
+  {
+    "title": "Echoes in the Hall",
+    "author": "James",
+    "story": "I heard footsteps behind me in the empty school hallway. I turned around. Nothing. I kept walking. The footsteps kept following.",
+    "length": "short",
+    "genre": "spooky"
+  },
+  {
+    "title": "The Long Road Home",
+    "author": "Sofia",
+    "story": "We left at dawn with nothing but a backpack and a map drawn on a napkin. Three wrong turns, one flat tire, and a thunderstorm later, we finally saw the porch light. Mom was already on the steps, waving like we'd been gone for years instead of hours.",
+    "length": "medium",
+    "genre": "adventure"
+  },
+  {
+    "title": "The Inventor's Mistake",
+    "author": "Leo",
+    "story": "Dr. Patel built a machine that could predict the future — but only five seconds ahead. Useless, everyone said. Until the earthquake hit, and those five seconds saved an entire classroom.",
+    "length": "medium",
+    "genre": "sci-fi"
+  },
+  {
+    "title": "Grandma's Recipe",
+    "author": "Anika",
+    "story": "My grandma never measured anything. A pinch of this, a handful of that. I tried to write it down once. She laughed and said the secret ingredient was paying attention. I still can't get the soup right.",
+    "length": "medium",
+    "genre": "heartfelt"
+  },
+  {
+    "title": "Message in a Bottle",
+    "author": "Kai",
+    "story": "I found a bottle on the beach with a note inside. It said: \"If you're reading this, look up.\" I looked up. A kid on the cliff was waving and laughing.",
+    "length": "short",
+    "genre": "funny"
+  },
+  {
+    "title": "The Library at Midnight",
+    "author": "Zara",
+    "story": "The books rearranged themselves every night after closing. The librarian knew. She left them snacks.",
+    "length": "short",
+    "genre": "fantasy"
+  },
+  {
+    "title": "404: Story Not Found",
+    "author": "Dev",
+    "story": "Once upon a time, there was a story here. But someone deleted it. The end. Just kidding — the story backed itself up. It was about a robot who learned to laugh. The robot's name was 404.",
+    "length": "medium",
+    "genre": "sci-fi"
+  },
+  {
+    "title": "First Snow",
+    "author": "Maya",
+    "story": "The first snowflake landed on her nose. She was seven. She thought it was magic. She was right.",
+    "length": "short",
+    "genre": "heartfelt"
+  }
+]

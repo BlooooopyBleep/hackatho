@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Story Box</title>
+
+  <!-- Link to our CSS file for styling -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ============================== -->
+  <!--  HEADER                        -->
+  <!--  The top of the page with the  -->
+  <!--  title and description.        -->
+  <!-- ============================== -->
+  <header>
+    <h1>Digital Story Box</h1>
+    <p class="subtitle">Pick a story type and press the button!</p>
+  </header>
+
+  <!-- ============================== -->
+  <!--  MAIN CONTENT                  -->
+  <!--  Everything the user sees and  -->
+  <!--  interacts with goes here.     -->
+  <!-- ============================== -->
+  <main>
+
+    <!-- ================================ -->
+    <!--  STORY BUTTONS                   -->
+    <!--  Three buttons that let the user -->
+    <!--  choose what kind of story they  -->
+    <!--  want to receive.                -->
+    <!-- ================================ -->
+    <section id="button-section">
+      <!-- Each button has a data-type attribute that tells our
+           JavaScript which kind of story to look for. -->
+      <button class="story-btn button" data-type="short">Short Story</button>
+      <button class="story-btn button" data-type="medium">Medium Story</button>
+      <button class="story-btn button" data-type="surprise">Surprise Me!</button>
+      <button class="signup-btn button" onclick="goToSignUp()">Sign Up</button>
+      <button class="login-btn button" onclick="goToLogin()">Login</button>
+    </section>
+
+    <!-- ================================ -->
+    <!--  STATUS MESSAGE                  -->
+    <!--  Shows loading text or errors.   -->
+    <!-- ================================ -->
+    <p id="status-message" class="status hidden"></p>
+
+    <!-- ================================ -->
+    <!--  STORY DISPLAY                   -->
+    <!--  This section is HIDDEN at first -->
+    <!--  and appears when a story is     -->
+    <!--  dispensed.                       -->
+    <!-- ================================ -->
+    <section id="story-display" class="hidden">
+
+      <!-- Story content -->
+      <div id="story-card" class="card">
+        <h2 id="story-title" class="story-title"></h2>
+        <p id="story-author" class="story-author"></p>
+        <p id="story-text" class="story-text"></p>
+        <p id="story-index" class="story-index"></p>
+      </div>
+
+      <!-- ================================ -->
+      <!--  RATING SYSTEM                   -->
+      <!--  After reading a story, the user -->
+      <!--  can rate it 1, 2, or 3 stars.   -->
+      <!-- ================================ -->
+      <div id="rating-section" class="rating-section">
+        <p class="rating-label">Rate this story:</p>
+        <div class="rating-buttons">
+          <!-- Each button sends a different rating number -->
+          <button class="rate-btn" data-rating="1">&#9733;</button>
+          <button class="rate-btn" data-rating="2">&#9733;&#9733;</button>
+          <button class="rate-btn" data-rating="3">&#9733;&#9733;&#9733;</button>
+        </div>
+        <p id="rating-feedback" class="rating-feedback hidden"></p>
+      </div>
+
+      <div id="favorite-section" class="rating-section">
+        <p class="favorite-label">Favorite this story:</p>
+        <div class="favorite-buttons">
+          <button class="favorite-btn" data-favorite="1">&#10084;</button>
+        </div>
+        <p id="favorite-feedback" class="favorite-feedback hidden"></p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ============================== -->
+  <!--  FOOTER                        -->
+  <!-- ============================== -->
+  <footer>
+    <p>Hackathon 2026</p>
+  </footer>
+
+  <!-- Link to our JavaScript file (must be at the bottom
+       so the HTML elements exist before the script runs) -->
+  <script src="script.js"></script>
+</body>
+</html>
