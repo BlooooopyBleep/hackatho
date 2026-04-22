@@ -18,9 +18,9 @@
 
 /* The whole page */
 body {
-  background-image: url("tralalero.jpg");
-  color: #333;
-  font-family: Arial, Helvetica, sans-serif;
+  background: black;
+  color: white;
+  font-family: sans-serif, Helvetica, Arial;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -84,24 +84,35 @@ main {
 /* ---------- Card ---------- */
 /* The container that holds the story */
 .card {
-  background-color: #fff;
-  border: 1px solid #ddd;
+  background-color: black;
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.post {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background-color: white;
+  width: 400px;
+  height: 400px;
 }
 
 
 /* ---------- Story Content ---------- */
 .story-title {
   font-size: 1.3rem;
-  color: #222;
+  color: white;
   margin-bottom: 0.3rem;
 }
 
 .story-author {
   font-size: 0.9rem;
-  color: #888;
+  color: white;
   margin-bottom: 1rem;
   font-style: italic;
 }
@@ -109,7 +120,7 @@ main {
 .story-text {
   font-size: 1rem;
   line-height: 1.7;
-  color: #444;
+  color: white;
   /* This keeps line breaks from the spreadsheet */
   white-space: pre-line;
   margin-bottom: 0.5rem;
@@ -117,7 +128,7 @@ main {
 
 .story-index {
   font-size: 0.7rem;
-  color: #888;
+  color: white;
 }
 
 
@@ -143,7 +154,7 @@ main {
   padding: 0.5rem 1rem;
   font-size: 1.2rem;
   color: #b8860b;
-  background-color: #fff;
+  background-color: black;
   border: 2px solid #ddd;
   border-radius: 6px;
   cursor: pointer;
@@ -151,13 +162,13 @@ main {
 
 .rate-btn:hover {
   border-color: #b8860b;
-  background-color: #fffbe6;
+  background-color: black;
 }
 
 /* When a rating button has been clicked */
 .rate-btn.selected {
   border-color: #b8860b;
-  background-color: #fff3cd;
+  background-color: black;
 }
 
 .rating-feedback {
@@ -188,7 +199,7 @@ main {
   padding: 0.5rem 1rem;
   font-size: 1.2rem;
   color: #b8860b;
-  background-color: #fff;
+  background-color: black;
   border: 2px solid #ddd;
   border-radius: 6px;
   cursor: pointer;
@@ -196,13 +207,13 @@ main {
 
 .favorite-btn:hover {
   border-color: #b8860b;
-  background-color: #fffbe6;
+  background-color: black;
 }
 
 /* When a rating button has been clicked */
 .favorite-btn.selected {
   border-color: #b8860b;
-  background-color: #fff3cd;
+  background-color: black;
 }
 
 .favorite-feedback {

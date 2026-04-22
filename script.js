@@ -272,7 +272,7 @@ function dispenseStory(type) {
   // We use textContent (not innerHTML) for security — it prevents
   // anyone from injecting HTML or JavaScript through the spreadsheet.
   storyTitle.textContent = story.title;
-  storyAuthor.textContent = story.author ? "by " + story.author : "";
+  storyAuthor.textContent = story.author;
   storyText.textContent = story.story;
   storyIndex.textContent = "Story " + story.index + " of " + storyCount;
 
