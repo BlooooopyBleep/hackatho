@@ -47,7 +47,7 @@ var GOOGLE_SHEET_ID = "1g5e43K7vy4sHt7AFxo9ztchzh73qJgttwHebkmLgsw8";
 //
 // Leave this empty ("") if you haven't set up Apps Script yet.
 // The story dispensing will still work — only ratings need this.
-var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAVfzFmBjnVysGl5jG0-r0B8C8nR7fFzawIhIvkPuQdrG6Y6KYaw0V094pPdQSRh7A/exec";
+var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6PXfwJVGylCRpNDbW2lac-Q067I1FtmafUxFHhbieCROQ-uQ_nYBD70WpRQvu78aM/exec";
 
 // ============================================================
 //  END OF CONFIGURATION
@@ -69,15 +69,7 @@ var ratingFeedback = document.getElementById("rating-feedback");
 var alert = document.getElementById("alert");
 var lastStory = null;
 
-
-// ---- 2. CREATE VARIABLES TO HOLD DATA ----
-
-// This array (list) will hold ALL stories from the Google Sheet.
-// It starts empty and gets filled when we fetch the data.
 var allStories = [];
-
-// This keeps track of which story is currently being displayed,
-// so we know which one the user is rating.
 var currentStory = null;
 
 
@@ -438,10 +430,12 @@ function goToSignUp() {
 
 function getSignUp() {
   var email = document.getElementById("email").value;
+  var username = document.getElementById("username").value;
   var password = document.getElementById("password").value;
 
   var signUpData = {
     email: email,
+    username: username,
     password: password
   };
 
@@ -457,7 +451,16 @@ function submitSignUp(signUpData) {
       signUpData
     })
   })
-  window.location.href = "index.html";
+  .then(function (res) {
+    return res.text();
+  })
+  .then(function (result) {
+    console.log("Signup response:", result);
+    window.location.href = "index.html"; // ← move here
+  })
+  .catch(function (err) {
+    console.log("Signup error:", err);
+  });
 }
 
 // Login Button
