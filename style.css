@@ -118,18 +118,26 @@ main {
   padding-top: 2rem;
 }
 
+.author-section {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-direction: row;
+  width: 100%;
+  padding-bottom: 0.7rem;
+}
+
 #story-image {
-  width: 10%;
-  height: auto;
+  width: 2rem;
+  height: 2rem;
   border-radius: 50%;
+  margin-right: 0.5rem;
 }
 
 .story-author {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: white;
-  margin-bottom: 1rem;
   font-style: italic;
-  align-self: flex-start;
 }
 
 .story-text {
