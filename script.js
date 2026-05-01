@@ -47,7 +47,7 @@ var GOOGLE_SHEET_ID = "1g5e43K7vy4sHt7AFxo9ztchzh73qJgttwHebkmLgsw8";
 //
 // Leave this empty ("") if you haven't set up Apps Script yet.
 // The story dispensing will still work — only ratings need this.
-var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6PXfwJVGylCRpNDbW2lac-Q067I1FtmafUxFHhbieCROQ-uQ_nYBD70WpRQvu78aM/exec";
+var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzpAzG3k_djOybPCH3tlOowX8A7BCg9TJW8uH1G4WNnwQItX-mKvkd4C1zU88JGhbDX/exec";
 
 // ============================================================
 //  END OF CONFIGURATION
@@ -170,7 +170,9 @@ function parseCSV(csvText) {
         story: values[2],                          // Column C
         length: values.length >= 4 ? values[3].toLowerCase() : "",  // Column D
         genre: values.length >= 5 ? values[4].toLowerCase() : "",   // Column E
-        index: values[5]
+        index: values[5],
+        ratings: values.length >= 7 ? values[6] : "",   // Column F (optional)
+        favorites: values.length >= 8 ? values[7] : ""   // Column G (optional)
       });
     }
   }
@@ -244,6 +246,16 @@ function dispenseStory(type) {
       // Only stories where the length column is "medium"
       matchingStories = allStories.filter(function (story) {
         return story.length === "medium";
+      });
+    } else if (type === "poetry") {
+      // Only stories where the genre column is "poetry"
+      matchingStories = allStories.filter(function (story) {
+        return story.genre === "poetry";
+      });
+    } else if (type === "fiction") {
+      // Only stories where the genre column is "fiction"
+      matchingStories = allStories.filter(function (story) {
+        return story.genre === "fiction";
       });
     } else {
       // "surprise" — use ALL stories
@@ -525,6 +537,20 @@ function submitFavorite(favorite) {
   delete favorites[currentStory.title]; // REMOVE it
 
   localStorage.setItem("storyFavorites", JSON.stringify(favorites));
+
+  var data = {
+      title: currentStory.title,
+      favorite: 0
+    };
+
+    fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        action: "favorite",
+        data
+      })
+    })
 
   return;
 }
