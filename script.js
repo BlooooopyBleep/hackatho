@@ -1,600 +1,263 @@
-// ===================================
-// DIGITAL STORY BOX — JAVASCRIPT
-// ===================================
-//
-// This file contains ALL the logic for the Story Box.
-// Here's what it does, step by step:
-//
-//   1. When the page loads, it fetches (downloads) stories
-//      from your Google Sheet using a published CSV link.
-//
-//   2. The stories are stored in an ARRAY (a list).
-//
-//   3. When the user clicks a button ("Short Story", "Medium
-//      Story", or "Surprise Me!"), we FILTER the list to find
-//      matching stories, then pick one at RANDOM.
-//
-//   4. The story title, author, and text are displayed on the page.
-//
-//   5. The user can RATE the story (1, 2, or 3 stars).
-//      The rating is sent to Google Sheets using the Apps Script URL.
-//
-// DATA FLOW:
-//   Google Sheet → Published CSV → fetch() → allStories array
-//   User clicks button → filter + random pick → display on page
-//   User clicks star → fetch() POST → rating saved in Google Sheet
-//
-
-
 // ============================================================
-//  CONFIGURATION — EDIT THESE TWO VALUES!
+//  CONFIGURATION
 // ============================================================
-
-// YOUR GOOGLE SHEET ID
-// This is how your website reads stories from the spreadsheet.
-//
-// Find it in your Google Sheet URL:
-//   https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID_HERE/edit
-//
-// Copy the long string between /d/ and /edit and paste it below.
 var GOOGLE_SHEET_ID = "1g5e43K7vy4sHt7AFxo9ztchzh73qJgttwHebkmLgsw8";
-
-// YOUR GOOGLE APPS SCRIPT URL
-// This is how your website sends ratings back to the spreadsheet.
-//
-// You get this URL after deploying your Apps Script as a Web App.
-// It looks like: https://script.google.com/macros/s/XXXXXXXXX/exec
-//
-// Leave this empty ("") if you haven't set up Apps Script yet.
-// The story dispensing will still work — only ratings need this.
 var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzpAzG3k_djOybPCH3tlOowX8A7BCg9TJW8uH1G4WNnwQItX-mKvkd4C1zU88JGhbDX/exec";
 
-// ============================================================
-//  END OF CONFIGURATION
-// ============================================================
-
-
-// ---- 1. GRAB REFERENCES TO HTML ELEMENTS ----
-// We need to connect our JavaScript to the elements in index.html.
-// document.getElementById("some-id") finds the element with that id.
-
+// DOM Elements
 var storyDisplay = document.getElementById("story-display");
 var storyTitle = document.getElementById("story-title");
 var storyAuthor = document.getElementById("story-author");
 var storyText = document.getElementById("story-text");
 var storyIndex = document.getElementById("story-index");
-var storyCount = null;
 var statusMessage = document.getElementById("status-message");
 var ratingFeedback = document.getElementById("rating-feedback");
-var alert = document.getElementById("alert");
-var lastStory = null;
+var aiVisualizer = document.getElementById("ai-visualizer");
 
+var storyCount = null;
+var lastStory = null;
 var allStories = [];
 var currentStory = null;
+var typingInterval = null;
 
-
-// ---- 3. LOAD STORIES FROM GOOGLE SHEETS ----
-// This function downloads your Google Sheet as CSV text,
-// then converts (parses) it into an array of story objects.
-//
-// CSV stands for "Comma-Separated Values". It's a simple text
-// format that looks like this:
-//   "Title","Author","Story","Length","Genre"
-//   "The Sun","Ada","Once upon a time...","short","adventure"
-//
-// Google Sheets can publish any spreadsheet as CSV automatically.
+// Simulated AI Stories for the "Poetry Serene" theme
+const aiPoetryPrompts = [
+  { title: "Whispers of the Dawn", author: "AI Muse", story: "The morning sighs a breath of gold,\nAcross the fields, the light is bold.\nA quiet peace begins to wake,\nUpon the surface of the lake.\n\nBreathe in the dawn, let worries fade,\nWithin this light, new hopes are made." },
+  { title: "The Silent Forest", author: "AI Muse", story: "Ancient roots beneath the pine,\nWhere shadows and the moss entwine.\nNo hurried clocks, no urgent race,\nJust nature's slow and steady grace.\n\nRest here awhile, beneath the trees,\nAnd let your spirit catch the breeze." },
+  { title: "Ocean's Lullaby", author: "AI Muse", story: "The tide rolls in, a gentle sweep,\nTo rock the weary shores to sleep.\nThe moon above, a silver guide,\nReflected on the endless tide.\n\nLet go the anchor, drift away,\nTomorrow brings another day." }
+];
 
 function loadStories() {
-  // If no Sheet ID has been set, show a helpful message
   if (GOOGLE_SHEET_ID === "") {
-    showStatus(
-      "No Google Sheet connected! Paste your Sheet ID into script.js (see README).",
-      true
-    );
+    showStatus("No Google Sheet connected!", true);
     return;
   }
-
-  // Show a loading message while we fetch
-  showStatus("Loading stories...", false);
-
-  // Build the URL that gives us the sheet data as CSV
-  var csvURL = "https://docs.google.com/spreadsheets/d/" +
-    GOOGLE_SHEET_ID +
-    "/gviz/tq?tqx=out:csv";
-
-  // fetch() is a built-in JavaScript function that downloads data from a URL.
-  // It returns a "Promise" — which means the download happens in the background
-  // and .then() runs AFTER it finishes.
+  showStatus("Gathering pages...", false);
+  
+  var csvURL = "https://docs.google.com/spreadsheets/d/" + GOOGLE_SHEET_ID + "/gviz/tq?tqx=out:csv";
+  
   fetch(csvURL)
-    .then(function (response) {
-      // The response is raw data. We convert it to text.
-      return response.text();
-    })
-    .then(function (csvText) {
-      // Now we have the CSV text. Let's parse it into story objects.
-      console.log("CSV RAW:", csvText);
+    .then(response => response.text())
+    .then(csvText => {
       allStories = parseCSV(csvText);
-      console.log("PARSED STORIES:", allStories);
-      if (allStories.length === 0) {
-        showStatus("No stories found. Add some to your Google Sheet!", true);
-      } else {
-        hideStatus();
-        console.log("Loaded " + allStories.length + " stories!");
-      }
+      if (allStories.length === 0) showStatus("No stories found.", true);
+      else hideStatus();
     })
-    .catch(function (error) {
-      // .catch() runs if something goes wrong (bad URL, no internet, etc.)
-      showStatus(
-        "Could not load stories. Check your Sheet ID and make sure the sheet is published. (See README)",
-        true
-      );
-      console.log("Error:", error);
+    .catch(error => {
+      showStatus("Could not load stories. Check your internet or Sheet permissions.", true);
     });
 }
 
-
-// ---- 4. PARSE CSV TEXT INTO STORY OBJECTS ----
-// This function takes the raw CSV text from Google Sheets
-// and turns it into an array of JavaScript objects like:
-//   { title: "The Sun", author: "Ada", story: "Once...", length: "short", genre: "adventure" }
-//
-// EXPECTED GOOGLE SHEET COLUMNS (in this order):
-//   A: Title
-//   B: Author
-//   C: Story
-//   D: Length    (should be "short", "medium", or "long")
-//   E: Genre     (like "adventure", "funny", "spooky", etc.)
-
 function parseCSV(csvText) {
   var stories = [];
-
-  // Split the CSV text into lines. Each line = one row in the spreadsheet.
   var lines = csvText.split("\n");
-
-  // Start at line 1 (not 0) to SKIP the header row.
-  // Line 0 contains the column names like "Title", "Author", etc.
   for (var i = 1; i < lines.length; i++) {
     var line = lines[i].trim();
-
-    // Skip empty lines
     if (line === "") continue;
-
-    // Extract the individual values from this CSV line
     var values = extractCSVValues(line);
-
-    // We need at least 3 columns (Title, Author, Story)
     if (values.length >= 3 && values[0] !== "") {
       stories.push({
-        title: values[0],                          // Column A
-        author: values[1],                          // Column B
-        story: values[2],                          // Column C
-        length: values.length >= 4 ? values[3].toLowerCase() : "",  // Column D
-        genre: values.length >= 5 ? values[4].toLowerCase() : "",   // Column E
-        index: values[5],
-        ratings: values.length >= 7 ? values[6] : "",   // Column F (optional)
-        favorites: values.length >= 8 ? values[7] : ""   // Column G (optional)
+        title: values[0],
+        author: values[1],
+        story: values[2],
+        length: values.length >= 4 ? values[3].toLowerCase() : "",
+        genre: values.length >= 5 ? values[4].toLowerCase() : "",
+        index: i
       });
     }
   }
-
   storyCount = stories.length;
-
   return stories;
 }
 
-
-// ---- 5. EXTRACT VALUES FROM A CSV LINE ----
-// CSV wraps values in quotes: "value1","value2","value3"
-// This function pulls out each value, handling commas inside quotes.
-//
-// Example input:  "Hello, world","Ada","A story"
-// Example output: ["Hello, world", "Ada", "A story"]
-
 function extractCSVValues(line) {
-  var values = [];
-  var current = "";
-  var insideQuotes = false;
-
+  var values = [], current = "", insideQuotes = false;
   for (var j = 0; j < line.length; j++) {
     var char = line[j];
-
-    if (char === '"') {
-      // Toggle: entering or leaving a quoted value
-      insideQuotes = !insideQuotes;
-    } else if (char === "," && !insideQuotes) {
-      // This comma separates two values (not inside quotes)
+    if (char === '"') insideQuotes = !insideQuotes;
+    else if (char === "," && !insideQuotes) {
       values.push(current.trim());
       current = "";
-    } else {
-      // Regular character — add it to the current value
-      current += char;
-    }
+    } else current += char;
   }
-
-  // Don't forget the last value (there's no comma after it)
   values.push(current.trim());
   return values;
 }
 
+// AI Story Generation Logic
+function generateAIStory() {
+  storyDisplay.classList.add("hidden");
+  aiVisualizer.classList.remove("hidden");
+  hideStatus();
+  
+  // Clear any existing typing interval
+  if(typingInterval) clearInterval(typingInterval);
 
-// ---- 6. DISPENSE A STORY ----
-// This is the MAIN function! It runs when the user clicks a button.
-//
-// How it works:
-//   1. Check what type the user wants ("short", "medium", or "surprise")
-//   2. FILTER the allStories array to find matching stories
-//   3. Pick one at RANDOM
-//   4. Display it on the page
+  // Simulate network delay (2.5 seconds)
+  setTimeout(() => {
+    aiVisualizer.classList.add("hidden");
+    
+    // Pick random AI story
+    let randomAI = aiPoetryPrompts[Math.floor(Math.random() * aiPoetryPrompts.length)];
+    currentStory = randomAI;
+    lastStory = currentStory;
+
+    storyTitle.textContent = currentStory.title;
+    storyAuthor.textContent = currentStory.author;
+    storyIndex.textContent = "Generated just for you";
+    storyText.textContent = ""; // Clear text for typing effect
+    
+    storyDisplay.classList.remove("hidden");
+    resetInteractions();
+    
+    // Typewriter effect for serenity
+    let i = 0;
+    typingInterval = setInterval(() => {
+      storyText.textContent += currentStory.story.charAt(i);
+      i++;
+      if(i >= currentStory.story.length) {
+        clearInterval(typingInterval);
+      }
+    }, 30); // Speed of typing
+
+    storyDisplay.scrollIntoView({ behavior: "smooth" });
+  }, 2500);
+}
 
 function dispenseStory(type) {
-  while (lastStory == currentStory) {
-    // Make sure stories have been loaded
-    if (allStories.length === 0) {
-      showStatus("No stories loaded yet. Check your Google Sheet connection.", true);
-      return;
-    }
-
-    // FILTER: find stories that match the requested type
-    var matchingStories;
-
-    if (type === "short") {
-      // Only stories where the length column is "short"
-      matchingStories = allStories.filter(function (story) {
-        return story.length === "short";
-      });
-    } else if (type === "medium") {
-      // Only stories where the length column is "medium"
-      matchingStories = allStories.filter(function (story) {
-        return story.length === "medium";
-      });
-    } else if (type === "poetry") {
-      // Only stories where the genre column is "poetry"
-      matchingStories = allStories.filter(function (story) {
-        return story.genre === "poetry";
-      });
-    } else if (type === "fiction") {
-      // Only stories where the genre column is "fiction"
-      matchingStories = allStories.filter(function (story) {
-        return story.genre === "fiction";
-      });
-    } else {
-      // "surprise" — use ALL stories
-      matchingStories = allStories;
-    }
-
-    // If no stories match the filter, fall back to all stories
-    if (matchingStories.length === 0) {
-      matchingStories = allStories;
-    }
-
-    // PICK A RANDOM STORY:
-    // Math.random() gives a decimal between 0 and 1 (like 0.73)
-    // Multiply by array length → range like 0 to 9.99
-    // Math.floor() rounds DOWN → whole number like 7
-    // That's our random index!
-    var randomIndex = Math.floor(Math.random() * matchingStories.length);
-    var story = matchingStories[randomIndex];
-
-    // Save reference to the current story (used when rating)
-    currentStory = story;
+  if (type === "ai") {
+    generateAIStory();
+    return;
   }
+
+  if (allStories.length === 0) return;
+  
+  // Clear AI typing interval if user clicks a normal button mid-generation
+  if(typingInterval) {
+    clearInterval(typingInterval);
+    aiVisualizer.classList.add("hidden");
+  }
+
+  var matchingStories = allStories;
+  if (type !== "surprise") {
+    matchingStories = allStories.filter(s => s.length === type || s.genre === type);
+    if (matchingStories.length === 0) matchingStories = allStories;
+  }
+
+  // Prevent infinite loop if only 1 story exists
+  let attempts = 0;
+  do {
+    var randomIndex = Math.floor(Math.random() * matchingStories.length);
+    currentStory = matchingStories[randomIndex];
+    attempts++;
+  } while (lastStory === currentStory && matchingStories.length > 1 && attempts < 10);
+
   lastStory = currentStory;
 
-  // DISPLAY the story on the page
-  // We use textContent (not innerHTML) for security — it prevents
-  // anyone from injecting HTML or JavaScript through the spreadsheet.
-  storyTitle.textContent = story.title;
-  storyAuthor.textContent = story.author;
-  storyText.textContent = story.story;
-  storyIndex.textContent = "Story " + story.index + " of " + storyCount;
-
-  // Show the story section (it starts hidden)
+  storyTitle.textContent = currentStory.title;
+  storyAuthor.textContent = currentStory.author;
+  storyText.textContent = currentStory.story;
+  storyIndex.textContent = "Story " + currentStory.index + " of " + storyCount;
+  
   storyDisplay.classList.remove("hidden");
-
-  // Reset the rating buttons (remove any previous selection)
-  resetRating();
-  resetFavorite();
-  var ratings = JSON.parse(localStorage.getItem("storyRatings")) || {};
-  var savedRating = ratings[story.title];
-
-  var favorites = JSON.parse(localStorage.getItem("storyFavorites")) || {};
-  var savedFavorite = favorites[story.title];
-
-  if (savedRating) {
-    highlightRating(savedRating);
-  }
-
-  if (savedFavorite) {
-    highlightFavorite(savedFavorite);
-  }
-
-  // Scroll down so the user can see the story
+  resetInteractions();
+  
   storyDisplay.scrollIntoView({ behavior: "smooth" });
 }
 
+// --- Interactions (Rating & Favorites) ---
 
-// ---- 7. RATING SYSTEM ----
-// When the user clicks a star button, we send the rating
-// to Google Sheets using the Apps Script URL.
-//
-// The rating is sent as a POST request with JSON data:
-//   { title: "Story Title", rating: 3 }
+function resetInteractions() {
+  document.querySelectorAll(".rate-btn").forEach(btn => btn.classList.remove("selected"));
+  document.querySelectorAll(".favorite-btn").forEach(btn => btn.classList.remove("selected"));
+  ratingFeedback.classList.add("hidden");
+
+  // Restore local storage state
+  var ratings = JSON.parse(localStorage.getItem("storyRatings")) || {};
+  var favorites = JSON.parse(localStorage.getItem("storyFavorites")) || {};
+  
+  if (ratings[currentStory.title]) highlightRating(ratings[currentStory.title]);
+  if (favorites[currentStory.title]) highlightFavorite(favorites[currentStory.title]);
+}
 
 function submitRating(rating) {
-  // Make sure we have a story to rate
   if (!currentStory) return;
-
-  // Visual feedback: highlight the selected button
   highlightRating(rating);
-
+  
   var ratings = JSON.parse(localStorage.getItem("storyRatings")) || {};
-
   ratings[currentStory.title] = rating;
-
   localStorage.setItem("storyRatings", JSON.stringify(ratings));
 
-  // Build the data to send
-  var data = {
-    title: currentStory.title,
-    rating: rating
-  };
-
-  // Send the rating to Google Sheets via Apps Script
-  // We use "text/plain" as the content type to avoid CORS issues.
-  // (CORS is a browser security feature that can block requests.)
   fetch(APPS_SCRIPT_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain" },
-    body: JSON.stringify({
-      action: "rating",
-      data
-    })
-  })
-    .then(function () {
-      showRatingFeedback("Thanks for rating!");
-    })
-    .catch(function () {
-      showRatingFeedback("Could not save rating. Check your Apps Script URL.");
-    });
+    body: JSON.stringify({ action: "rating", data: { title: currentStory.title, rating: rating } })
+  }).then(() => {
+    ratingFeedback.textContent = "Your feelings have been recorded.";
+    ratingFeedback.classList.remove("hidden");
+  }).catch(() => console.error("Could not save rating."));
 }
 
-
-// ---- 8. RATING HELPERS ----
-
-// Highlight the button that was clicked
 function highlightRating(rating) {
-  // Get all rating buttons
   var buttons = document.querySelectorAll(".rate-btn");
-
-  // Remove "selected" class from all buttons
-  for (var i = 0; i < buttons.length; i++) {
-    buttons[i].classList.remove("selected");
-  }
-
-  // Add "selected" class to the clicked button
-  // rating is 1, 2, or 3 → array index is 0, 1, or 2
+  buttons.forEach(b => b.classList.remove("selected"));
   buttons[rating - 1].classList.add("selected");
 }
 
-// Clear the rating selection (used when a new story is dispensed)
-function resetRating() {
-  var buttons = document.querySelectorAll(".rate-btn");
-  for (var i = 0; i < buttons.length; i++) {
-    buttons[i].classList.remove("selected");
+function submitFavorite(favorite) {
+  if (!currentStory) return;
+  var currentBtn = document.querySelector(".favorite-btn");
+  var isAlreadyFav = currentBtn.classList.contains("selected");
+  
+  var favorites = JSON.parse(localStorage.getItem("storyFavorites")) || {};
+  
+  if (isAlreadyFav) {
+    currentBtn.classList.remove("selected");
+    delete favorites[currentStory.title];
+    favorite = 0; 
+  } else {
+    currentBtn.classList.add("selected");
+    favorites[currentStory.title] = favorite;
   }
-  ratingFeedback.classList.add("hidden");
+  
+  localStorage.setItem("storyFavorites", JSON.stringify(favorites));
+
+  fetch(APPS_SCRIPT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({ action: "favorite", data: { title: currentStory.title, favorite: favorite } })
+  });
 }
 
-// Show a small feedback message after rating
-function showRatingFeedback(message) {
-  ratingFeedback.textContent = message;
-  ratingFeedback.classList.remove("hidden");
+function highlightFavorite(favorite) {
+  if(favorite > 0) {
+    document.querySelector(".favorite-btn").classList.add("selected");
+  }
 }
 
-
-// ---- 9. STATUS MESSAGE HELPERS ----
-
+// --- Helpers & Listeners ---
 function showStatus(message, isError) {
   statusMessage.textContent = message;
   statusMessage.className = isError ? "status error" : "status";
 }
-
 function hideStatus() {
   statusMessage.className = "status hidden";
 }
 
+document.querySelectorAll(".story-btn").forEach(btn => {
+  btn.addEventListener("click", function () { dispenseStory(this.getAttribute("data-type")); });
+});
 
-// ---- 10. EVENT LISTENERS ----
-// Event listeners connect user actions (like clicks) to our functions.
+document.querySelectorAll(".rate-btn").forEach(btn => {
+  btn.addEventListener("click", function () { submitRating(parseInt(this.getAttribute("data-rating"))); });
+});
 
-// --- Story Buttons ---
-// Get all three buttons and add a click listener to each one.
-// When clicked, we read the data-type attribute to know which
-// kind of story to dispense.
-var storyButtons = document.querySelectorAll(".story-btn");
+document.querySelectorAll(".favorite-btn").forEach(btn => {
+  btn.addEventListener("click", function () { submitFavorite(parseInt(this.getAttribute("data-favorite"))); });
+});
 
-for (var i = 0; i < storyButtons.length; i++) {
-  storyButtons[i].addEventListener("click", function () {
-    // "this" refers to the button that was clicked
-    // getAttribute("data-type") reads the data-type="short" etc.
-    var type = this.getAttribute("data-type");
-    dispenseStory(type);
-  });
-}
+function goToSignUp() { window.location.href = "signup.html"; }
+function goToLogin() { window.location.href = "login.html"; }
 
-// --- Rating Buttons ---
-// Get all three rating buttons and add a click listener to each.
-var rateButtons = document.querySelectorAll(".rate-btn");
-
-for (var i = 0; i < rateButtons.length; i++) {
-  rateButtons[i].addEventListener("click", function () {
-    // Read the data-rating attribute ("1", "2", or "3")
-    // parseInt turns the string "3" into the number 3
-    var rating = parseInt(this.getAttribute("data-rating"));
-    submitRating(rating);
-  });
-}
-
-var favoriteButtons = document.querySelectorAll(".favorite-btn");
-
-for (var i = 0; i < favoriteButtons.length; i++) {
-  favoriteButtons[i].addEventListener("click", function () {
-    var favorite = parseInt(this.getAttribute("data-favorite"));
-    submitFavorite(favorite);
-  });
-}
-
-// Sign Up Button
-function goToSignUp() {
-  window.location.href = "signup.html";
-}
-
-function getSignUp() {
-  var email = document.getElementById("email").value;
-  var username = document.getElementById("username").value;
-  var password = document.getElementById("password").value;
-
-  var signUpData = {
-    email: email,
-    username: username,
-    password: password
-  };
-
-  submitSignUp(signUpData);
-}
-
-function submitSignUp(signUpData) {
-  fetch(APPS_SCRIPT_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain" },
-    body: JSON.stringify({
-      action: "signup",
-      signUpData
-    })
-  })
-    .then(function (res) {
-      return res.text();
-    })
-    .then(function (result) {
-      console.log("Signup response:", result);
-      window.location.href = "index.html"; // ← move here
-    })
-    .catch(function (err) {
-      console.log("Signup error:", err);
-    });
-}
-
-// Login Button
-function goToLogin() {
-  window.location.href = "login.html";
-}
-
-function tryLogin() {
-  var email = document.getElementById("loginemail").value;
-  var password = document.getElementById("loginpassword").value;
-
-  var loginData = {
-    email: email,
-    password: password
-  };
-
-  submitLogin(loginData);
-}
-
-function submitLogin(loginData) {
-  fetch(APPS_SCRIPT_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain" },
-    body: JSON.stringify({
-      action: "login",
-      loginData
-    })
-  })
-    .then(function (response) {
-      return response.text();
-    })
-    .then(function (result) {
-      console.log("Raw result:", JSON.stringify(result));
-      console.log("Trimmed:", result.trim());
-      console.log("Matches OK:", result.trim() === "OK");
-      if (result.trim() === "OK") {
-        window.location.href = "index.html";
-      } else {
-        alert.classList.remove("hidden");
-      }
-    })
-}
-
-// Favorite Button
-
-function submitFavorite(favorite) {
-  if (!currentStory) return;
-
-  if (document.querySelector(".favorite-btn.selected") && document.querySelector(".favorite-btn.selected").getAttribute("data-favorite") == favorite) {
-  resetFavorite();
-
-  var favorites = JSON.parse(localStorage.getItem("storyFavorites")) || {};
-  delete favorites[currentStory.title]; // REMOVE it
-
-  localStorage.setItem("storyFavorites", JSON.stringify(favorites));
-
-  var data = {
-      title: currentStory.title,
-      favorite: 0
-    };
-
-    fetch(APPS_SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify({
-        action: "favorite",
-        data
-      })
-    })
-
-  return;
-}
-  else {
-
-    highlightFavorite(favorite);
-
-    var favorites = JSON.parse(localStorage.getItem("storyFavorites")) || {};
-
-    favorites[currentStory.title] = favorite;
-
-    localStorage.setItem("storyFavorites", JSON.stringify(favorites));
-
-    var data = {
-      title: currentStory.title,
-      favorite: favorite
-    };
-
-    fetch(APPS_SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify({
-        action: "favorite",
-        data
-      })
-    })
-  }
-}
-
-function highlightFavorite(favorite) {
-  var buttons = document.querySelectorAll(".favorite-btn");
-  for (var i = 0; i < buttons.length; i++) {
-    buttons[i].classList.remove("selected");
-  }
-  buttons[favorite - 1].classList.add("selected");
-}
-
-function resetFavorite() {
-  var buttons = document.querySelectorAll(".favorite-btn");
-  for (var i = 0; i < buttons.length; i++) {
-    buttons[i].classList.remove("selected");
-  }
-}
-
-// ---- 11. START THE APP ----
-// Load stories as soon as the page opens.
+// Start App
 loadStories();
