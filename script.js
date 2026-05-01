@@ -281,11 +281,19 @@ function dispenseStory(type) {
 
   // Reset the rating buttons (remove any previous selection)
   resetRating();
+  resetFavorite();
   var ratings = JSON.parse(localStorage.getItem("storyRatings")) || {};
   var savedRating = ratings[story.title];
 
+  var favorites = JSON.parse(localStorage.getItem("storyFavorites")) || {};
+  var savedFavorite = favorites[story.title];
+
   if (savedRating) {
     highlightRating(savedRating);
+  }
+
+  if (savedFavorite) {
+    highlightFavorite(savedFavorite);
   }
 
   // Scroll down so the user can see the story
@@ -418,8 +426,9 @@ for (var i = 0; i < rateButtons.length; i++) {
 var favoriteButtons = document.querySelectorAll(".favorite-btn");
 
 for (var i = 0; i < favoriteButtons.length; i++) {
-  rateButtons[i].addEventListener("click", function () {
-
+  favoriteButtons[i].addEventListener("click", function () {
+    var favorite = parseInt(this.getAttribute("data-favorite"));
+    submitFavorite(favorite);
   });
 }
 
@@ -451,16 +460,16 @@ function submitSignUp(signUpData) {
       signUpData
     })
   })
-  .then(function (res) {
-    return res.text();
-  })
-  .then(function (result) {
-    console.log("Signup response:", result);
-    window.location.href = "index.html"; // ← move here
-  })
-  .catch(function (err) {
-    console.log("Signup error:", err);
-  });
+    .then(function (res) {
+      return res.text();
+    })
+    .then(function (result) {
+      console.log("Signup response:", result);
+      window.location.href = "index.html"; // ← move here
+    })
+    .catch(function (err) {
+      console.log("Signup error:", err);
+    });
 }
 
 // Login Button
@@ -506,12 +515,58 @@ function submitLogin(loginData) {
 
 // Favorite Button
 
-function selectFavorite() {
-  
+function submitFavorite(favorite) {
+  if (!currentStory) return;
+
+  if (document.querySelector(".favorite-btn.selected") && document.querySelector(".favorite-btn.selected").getAttribute("data-favorite") == favorite) {
+  resetFavorite();
+
+  var favorites = JSON.parse(localStorage.getItem("storyFavorites")) || {};
+  delete favorites[currentStory.title]; // REMOVE it
+
+  localStorage.setItem("storyFavorites", JSON.stringify(favorites));
+
+  return;
+}
+  else {
+
+    highlightFavorite(favorite);
+
+    var favorites = JSON.parse(localStorage.getItem("storyFavorites")) || {};
+
+    favorites[currentStory.title] = favorite;
+
+    localStorage.setItem("storyFavorites", JSON.stringify(favorites));
+
+    var data = {
+      title: currentStory.title,
+      favorite: favorite
+    };
+
+    fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        action: "favorite",
+        data
+      })
+    })
+  }
 }
 
-function deselectFavorite() {
+function highlightFavorite(favorite) {
+  var buttons = document.querySelectorAll(".favorite-btn");
+  for (var i = 0; i < buttons.length; i++) {
+    buttons[i].classList.remove("selected");
+  }
+  buttons[favorite - 1].classList.add("selected");
+}
 
+function resetFavorite() {
+  var buttons = document.querySelectorAll(".favorite-btn");
+  for (var i = 0; i < buttons.length; i++) {
+    buttons[i].classList.remove("selected");
+  }
 }
 
 // ---- 11. START THE APP ----
